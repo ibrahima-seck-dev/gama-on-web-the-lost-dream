@@ -1,0 +1,50 @@
+{
+  "name": "gama-on-web-the-lost-dream",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx webpack serve --config webpack.dev.js",
+    "start:prod": "webpack serve --config webpack.prod.js",
+    "build:dev": "npx webpack --config webpack.dev.js",
+    "build": "npx webpack --config webpack.prod.js",
+    "lint": "npx eslint . --ext .js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibrahima-seck-dev/gama-on-web-the-lost-dream.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ibrahima-seck-dev/gama-on-web-the-lost-dream/issues"
+  },
+  "homepage": "https://github.com/ibrahima-seck-dev/gama-on-web-the-lost-dream#readme",
+  "devDependencies": {
+    "@babylonjs/core": "^7.44.1",
+    "@babylonjs/gui": "^7.44.1",
+    "@babylonjs/havok": "^1.3.10",
+    "@babylonjs/inspector": "^7.44.1",
+    "@babylonjs/loaders": "^7.44.1",
+    "@babylonjs/materials": "^7.44.1",
+    "@eslint/js": "^9.18.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "eslint": "^9.18.0",
+    "file-loader": "^6.2.0",
+    "globals": "^15.14.0",
+    "html-webpack-plugin": "^5.6.3",
+    "js-loader": "^0.0.2",
+    "source-map-loader": "^5.0.0",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0",
+    "webpack-merge": "^6.0.1"
+  },
+  "dependencies": {
+    "eslint-plugin-import": "^2.31.0",
+    "gh-pages": "^6.3.0"
+  }
+}
