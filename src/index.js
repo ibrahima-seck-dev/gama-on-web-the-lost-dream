@@ -1,32 +1,48 @@
-import { Engine, FreeCamera, HemisphericLight, MeshBuilder, Scene, Vector3 } from "@babylonjs/core";
+import { Engine } from "@babylonjs/core";
+import MontainScene from "./mountain/MountainScene";
+import DessertScene from "./dessert/DessertScene";
+import CityScene from "./city/CityScene";
 
 window.onload = () => {
     console.log('Hello World!');
 
     const canvas = document.getElementById("renderCanvas");
-    let engine = new Engine(canvas, true);
+    const engine = new Engine(canvas, true);
+    let currentScene;
 
-    const createScene = function () {
-        const scene = new Scene(engine);
-        const camera = new FreeCamera("camera1", 
-            new Vector3(0, 5, -10), scene);
-        camera.setTarget(Vector3.Zero());
-        camera.attachControl(canvas, true);
-        const light = new HemisphericLight("light", 
-            new Vector3(0, 1, 0), scene);
-        light.intensity = 0.7;
-        const sphere = MeshBuilder.CreateSphere("sphere", 
-            {diameter: 2, segments: 32}, scene);
-        sphere.position.y = 1;
-        const ground = MeshBuilder.CreateGround("ground", 
-            {width: 6, height: 6}, scene);
-        return scene;
+    // Dictionnaire des scènes disponibles
+    const scenes = {
+        "montain": new MontainScene(engine, canvas),
+        "dessert": new DessertScene(engine, canvas),
+        "city": new CityScene(engine, canvas)
     };
-    const scene = createScene(); 
-    engine.runRenderLoop(function () {
-            scene.render();
+
+    // Fonction pour changer de scène
+    function switchScene(sceneName) {
+        if (scenes[sceneName]) {
+            console.log(`Switching to scene: ${sceneName}`);
+            currentScene = scenes[sceneName];
+            currentScene.initScene();  // Appelle la méthode pour initialiser la scène
+        }
+    }
+
+    // Sélectionner la scène par défaut
+    switchScene("dessert");
+
+    // Lancer la boucle de rendu
+    engine.runRenderLoop(() => {
+        if (currentScene && currentScene.scene) {
+            currentScene.scene.render();
+        }
     });
-    window.addEventListener("resize", function () {
-            engine.resize();
+
+    // Ajuster la taille du canvas lors du redimensionnement
+    window.addEventListener("resize", () => {
+        engine.resize();
     });
+
+    // Ajouter des boutons pour changer de scène
+    document.getElementById("montainBtn").addEventListener("click", () => switchScene("montain"));
+    document.getElementById("dessertBtn").addEventListener("click", () => switchScene("dessert"));
+    document.getElementById("cityBtn").addEventListener("click", () => switchScene("city"));
 };

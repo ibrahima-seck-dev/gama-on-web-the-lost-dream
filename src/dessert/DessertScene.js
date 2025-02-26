@@ -1,19 +1,32 @@
-// villeScene.js
 import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@babylonjs/core";
+import BaseScene from "../BaseScene";
+import { Inspector } from '@babylonjs/inspector';
 
-export function createDessertsScene(engine, canvas) {
-  const scene = new Scene(engine);
+class DessertScene extends BaseScene {
+  constructor(engine, canvas) {
+    super(engine, canvas);
+  }
 
-  const camera = new FreeCamera("cameraDessert", new Vector3(0, 5, -10), scene);
-  camera.setTarget(Vector3.Zero());
-  camera.attachControl(canvas, true);
+  initScene() {
+    const camera = new FreeCamera("cameraDessert", new Vector3(0, 5, -10), this._scene);
+    camera.setTarget(Vector3.Zero());
+    camera.attachControl(this._canvas, true);
 
-  const light = new HemisphericLight("lightDessert", new Vector3(0, 1, 0), scene);
-  light.intensity = 0.7;
+    // Configuration de la lumière
+    const light = new HemisphericLight("lightDessert", new Vector3(0, 1, 0), this._scene);
+    light.intensity = 0.7;
 
-  const ground = MeshBuilder.CreateGround("groundDessert", { width: 10, height: 10 }, scene);
+    // Création du sol
+    const ground = MeshBuilder.CreateGround("groundDessert", { width: 10, height: 10 }, this._scene);
 
-  // Ajoutez ici les éléments sspécifiques à la ville
+    // Affichage de l'inspecteur pour debug
+    Inspector.Show(this._scene, {});
 
-  return scene;
+    // Ajout des éléments spécifiques au désert
+    const cactus = MeshBuilder.CreateSphere("cactus", { diameter: 1 }, this._scene);
+
+    return this._scene;  // Retourne la scène
+  }
 }
+
+export default DessertScene;
