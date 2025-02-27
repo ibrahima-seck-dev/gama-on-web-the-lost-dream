@@ -1,7 +1,7 @@
 import { Engine } from "@babylonjs/core";
-import MontainScene from "./mountain/MountainScene";
-import DessertScene from "./dessert/DessertScene";
-import CityScene from "./city/CityScene";
+import ForestScene from "./scenes/ForestScene";
+import DessertScene from "./scenes/DessertScene";
+import CityScene from "./scenes/CityScene";
 
 window.onload = () => {
     console.log('Hello World!');
@@ -12,7 +12,7 @@ window.onload = () => {
 
     // Dictionnaire des scènes disponibles
     const scenes = {
-        "montain": new MontainScene(engine, canvas),
+        "forest": new ForestScene(engine, canvas),
         "dessert": new DessertScene(engine, canvas),
         "city": new CityScene(engine, canvas)
     };
@@ -27,7 +27,7 @@ window.onload = () => {
     }
 
     // Sélectionner la scène par défaut
-    switchScene("dessert");
+    switchScene("city");
 
     // Lancer la boucle de rendu
     engine.runRenderLoop(() => {
