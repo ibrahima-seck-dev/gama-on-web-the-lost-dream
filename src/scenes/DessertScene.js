@@ -1,6 +1,8 @@
 import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@babylonjs/core";
 import BaseScene from "../BaseScene";
 import { Inspector } from '@babylonjs/inspector';
+import Player from "../models/Player";
+import meshUrl from "../../assets/meshs/Player.glb";
 
 class DessertScene extends BaseScene {
   constructor(engine, canvas) {
@@ -8,7 +10,7 @@ class DessertScene extends BaseScene {
   }
 
   initScene() {
-    super.initScene();
+  this.importMeshPlayer()
     const camera = new FreeCamera("cameraDessert", new Vector3(0, 5, -10), this._scene);
     camera.setTarget(Vector3.Zero());
     camera.attachControl(this._canvas, true);
@@ -27,6 +29,10 @@ class DessertScene extends BaseScene {
     
 
     return this._scene;  // Retourne la scène
+  }
+  importMeshPlayer() {
+    this.player = new Player(this._scene, meshUrl);  // Utilisation du meshUrl
+    this.player.load();  // Charge et positionne le joueur
   }
 }
 

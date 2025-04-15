@@ -1,6 +1,6 @@
 import { Scene } from "@babylonjs/core";
 import Player from "./models/Player";
-import meshUrl from "../assets/meshs/Player.glb";
+import playerMeshUrl from "../assets/meshs/Player.glb";
 
 class BaseScene {
   constructor(engine, canvas) {
@@ -18,15 +18,6 @@ class BaseScene {
 
   get scene() {
     return this._scene;
-  }
-  // Méthode à appeler après pour créer la scène
-  initScene() {
-    this.importMesh();  // Charger le personnage directement ici
-  }
-
-  importMesh() {
-    this.player = new Player(this._scene, meshUrl);  // Utilisation du meshUrl
-    this.player.load();  // Charge et positionne le joueur
   }
 }
 

@@ -1,15 +1,17 @@
 import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@babylonjs/core";
 import BaseScene from "../BaseScene";
 import { Inspector } from "@babylonjs/inspector";
+import Player from "../models/Player";
+import meshUrl from "../../assets/meshs/Player.glb";
 
 class ForestScene extends BaseScene {
   constructor(engine, canvas) {
     super(engine, canvas);
-    this.player = null; 
+    this.player = null;
   }
 
   initScene() {
-    super.initScene();
+    super.initScene();  // Appelle l'initialisation du joueur
     const camera = new FreeCamera("cameraMontagne", new Vector3(0, 5, -10), this._scene);
     camera.setTarget(Vector3.Zero());
     camera.attachControl(this._canvas, true);
@@ -26,6 +28,10 @@ class ForestScene extends BaseScene {
     Inspector.Show(this._scene, {});
 
     return this._scene;  // Retourne la scène
+  }
+  importMesh() {
+    this.player = new Player(this._scene, meshUrl);  // Utilisation du meshUrl
+    this.player.load();  // Charge et positionne le joueur
   }
 }
 

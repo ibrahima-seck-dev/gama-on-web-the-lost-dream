@@ -1,10 +1,10 @@
-// CityScene.js
-import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@babylonjs/core";
+import { Scene, FreeCamera, HemisphericLight, Vector3 } from "@babylonjs/core";
 import BaseScene from "../BaseScene";
 import { Inspector } from "@babylonjs/inspector";
 import ImportMesh from "../models/ImportMesh";  
-
-import meshUrl from "../../assets/meshs/cityBuildings.glb";
+import Player from "../models/Player";
+import playerMeshUrl from "../../assets/meshs/Player.glb";  // Renommage de l'URL du joueur
+import cityMeshUrl from "../../assets/meshs/cityBuildings.glb";  // Renommage de l'URL des bâtiments
 
 class CityScene extends BaseScene {
   constructor(engine, canvas) {
@@ -12,30 +12,33 @@ class CityScene extends BaseScene {
   }
 
   initScene() {
-    super.initScene();
-    
+    this.createSceneCity();  // Appel de la méthode de création de la scène
+    this.importMeshPlayer();  // Appel pour importer le mesh du joueur
+    this.importMeshScene();  // Appel pour importer la scène (les bâtiments)
+    Inspector.Show(this._scene, {}); // Affichage de l'inspecteur pour le débogage
+
+    return this._scene; 
+  }
+
+  createSceneCity() {
     // Création de la caméra
     const camera = new FreeCamera("cameraCity", new Vector3(0, 5, -10), this._scene);
     camera.setTarget(Vector3.Zero());
     camera.attachControl(this._canvas, true);
 
-    // Configuration de la lumière
+    // Création de la lumière
     const light = new HemisphericLight("lightCity", new Vector3(0, 1, 0), this._scene);
     light.intensity = 0.7;
+  }
 
-    // Création du sol
-    const ground = MeshBuilder.CreateGround("groundCity", { width: 10, height: 10 }, this._scene);
+  importMeshPlayer() {
+    this.player = new Player(this._scene, playerMeshUrl);  // Utilisation de l'URL du joueur
+    this.player.load();  // Charge et positionne le joueur
+  }
 
-    // Ajout d'un bâtiment
-   
-    // Importation de la ville en tant que mesh
-    const cityMesh = new ImportMesh(this._scene, meshUrl, new Vector3(0, 0, 0), "CityBuildings");
-    cityMesh.load();
-
-    // Affichage de l'inspecteur pour debug
-    Inspector.Show(this._scene, {});
-
-    return this._scene;  // Retourne la scène
+  importMeshScene() {
+    const cityMesh = new ImportMesh(this._scene, cityMeshUrl, new Vector3(0, 0, 0), "CityBuildings");
+    cityMesh.load();  // Charge et positionne les bâtiments
   }
 }
 

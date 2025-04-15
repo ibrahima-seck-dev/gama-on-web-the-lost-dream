@@ -1,48 +1,81 @@
 import { Engine } from "@babylonjs/core";
+import MainMenuScene from "./scenes/MainMenuScene";
 import ForestScene from "./scenes/ForestScene";
 import DessertScene from "./scenes/DessertScene";
 import CityScene from "./scenes/CityScene";
 
-window.onload = () => {
-    console.log('Hello World!');
+class Index {
+  constructor() {
+    this.canvas = document.getElementById("renderCanvas");
+    this.engine = new Engine(this.canvas, true);
+    this.currentScene = null;
+    this.currentSceneName = "";
+    this.scenes = {};
+  }
 
-    const canvas = document.getElementById("renderCanvas");
-    const engine = new Engine(canvas, true);
-    let currentScene;
+  // Initialisation du jeu
+  initGame() {
+    // Créer les scènes dès le début
+    const mainMenuScene = new MainMenuScene(this.engine, this.canvas);
+    const forestScene = new ForestScene(this.engine, this.canvas);
+    const dessertScene = new DessertScene(this.engine, this.canvas);
+    const cityScene = new CityScene(this.engine, this.canvas);
 
-    // Dictionnaire des scènes disponibles
-    const scenes = {
-        "forest": new ForestScene(engine, canvas),
-        "dessert": new DessertScene(engine, canvas),
-        "city": new CityScene(engine, canvas)
+    // Stocker les scènes dans un objet
+    this.scenes = {
+      "mainMenu": mainMenuScene,
+      "forest": forestScene,
+      "dessert": dessertScene,
+      "city": cityScene
     };
 
-    // Fonction pour changer de scène
-    function switchScene(sceneName) {
-        if (scenes[sceneName]) {
-            console.log(`Switching to scene: ${sceneName}`);
-            currentScene = scenes[sceneName];
-            currentScene.initScene();  // Appelle la méthode pour initialiser la scène
-        }
+    // Initialiser la scène principale (Menu)
+    this.switchScene("mainMenu");
+  }
+
+  // Méthode pour changer de scène de manière synchrone
+  switchScene(sceneName) {
+    if (this.scenes[sceneName]) {
+      console.log(`Switching to scene: ${sceneName}`);
+  
+   
+  
+      this.currentScene = this.scenes[sceneName];
+      this.currentScene.initScene();  // Appel de la méthode synchrone pour initialiser la scène
+      this.currentSceneName = sceneName;
+    } else {
+      console.error(`Scene ${sceneName} does not exist!`);
     }
+  }
 
-    // Sélectionner la scène par défaut
-    switchScene("city");
+  // Méthode pour démarrer le moteur de jeu
+  start() {
+    window.onload = () => {
+      console.log('Game Starting...');
+      
+      // Initialiser le jeu (scènes)
+      this.initGame();
 
-    // Lancer la boucle de rendu
-    engine.runRenderLoop(() => {
-        if (currentScene && currentScene.scene) {
-            currentScene.scene.render();
+      // Démarrer la boucle de rendu
+      this.engine.runRenderLoop(() => {
+        if (this.currentScene && this.currentScene.scene) {
+          this.currentScene.scene.render();
         }
-    });
+      });
 
-    // Ajuster la taille du canvas lors du redimensionnement
-    window.addEventListener("resize", () => {
-        engine.resize();
-    });
+      // Adapter la taille du moteur à la taille du canvas
+      window.addEventListener("resize", () => {
+        this.engine.resize();
+      });
+    };
+  }
+}
 
-    // Ajouter des boutons pour changer de scène
-    document.getElementById("montainBtn").addEventListener("click", () => switchScene("montain"));
-    document.getElementById("dessertBtn").addEventListener("click", () => switchScene("dessert"));
-    document.getElementById("cityBtn").addEventListener("click", () => switchScene("city"));
-};
+// Créer une instance du jeu et l'attacher à window pour un accès global
+const game = new Index();
+window.game = game;  // ⚠️ Important pour l'accès global
+
+// Démarrer le jeu
+game.start();
+
+export { Index };
