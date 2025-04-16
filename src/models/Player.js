@@ -5,18 +5,16 @@ class Player {
     this.scene = scene;
     this.meshUrl = meshUrl;
     this.mesh = null;
-    this.animations = {}; // Clés : "Jump", "Idle", "Run"
+    this.animations = {};
   }
 
   load(callback) {
-    SceneLoader.ImportMesh("", "", this.meshUrl, this.scene, (meshes, particleSystems, skeletons, animationGroups) => {
-      // On prend le premier mesh comme le joueur
+    SceneLoader.ImportMesh("", "", this.meshUrl, this.scene, (meshes, _, __, animationGroups) => {
       this.mesh = meshes[0];
       this.mesh.name = "Player";
       this.mesh.checkCollisions = true;
       this.mesh.bakeCurrentTransformIntoVertices();
 
-      // Stockage des animations avec leurs noms exacts
       animationGroups.forEach((anim) => {
         this.animations[anim.name] = anim;
       });

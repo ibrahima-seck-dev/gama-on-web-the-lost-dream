@@ -11,7 +11,7 @@ class ForestScene extends BaseScene {
   }
 
   initScene() {
-    super.initScene();  // Appelle l'initialisation du joueur
+  this.importMeshPlayer() 
     const camera = new FreeCamera("cameraMontagne", new Vector3(0, 5, -10), this._scene);
     camera.setTarget(Vector3.Zero());
     camera.attachControl(this._canvas, true);
@@ -29,7 +29,7 @@ class ForestScene extends BaseScene {
 
     return this._scene;  // Retourne la scène
   }
-  importMesh() {
+  importMeshPlayer() {
     this.player = new Player(this._scene, meshUrl);  // Utilisation du meshUrl
     this.player.load();  // Charge et positionne le joueur
   }

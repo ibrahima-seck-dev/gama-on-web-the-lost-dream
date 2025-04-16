@@ -4,15 +4,17 @@ class PlayerController {
   constructor(scene, playerMesh, animations = {}, speed = 0.1, jumpSound = null) {
     this.scene = scene;
     this.playerMesh = playerMesh;
-    this.animations = animations; // Doit contenir : Jump, Idle, Run
+    this.animations = animations;
     this.speed = speed;
-    this.jumpSound = jumpSound; // 🔥 Ajout du son de saut
+    this.jumpSound = jumpSound;
+
     this.inputMap = {};
     this.currentAnim = "";
     this.isJumping = false;
     this.jumpVelocity = 0;
     this.gravity = 0.01;
     this.minY = 0.5;
+    this.active = true;
 
     this.initControls();
   }
@@ -30,7 +32,7 @@ class PlayerController {
     });
 
     this.scene.onBeforeRenderObservable.add(() => {
-      this.updateMovement();
+      if (this.active) this.updateMovement();
     });
   }
 
@@ -52,7 +54,6 @@ class PlayerController {
 
     const direction = new Vector3(0, 0, 0);
 
-    // Déplacement clavier
     if (this.inputMap["arrowup"] || this.inputMap["z"]) direction.z -= 1;
     if (this.inputMap["arrowdown"] || this.inputMap["s"]) direction.z += 1;
     if (this.inputMap["arrowleft"] || this.inputMap["q"]) direction.x -= 1;
@@ -60,35 +61,29 @@ class PlayerController {
 
     const hasMovement = direction.lengthSquared() > 0;
 
-    // Gestion du mouvement
     if (hasMovement && !this.isJumping) {
       direction.normalize();
       this.playerMesh.moveWithCollisions(direction.scale(this.speed));
 
-      // Rotation fluide vers la direction
       const targetRotationY = Math.atan2(direction.x, direction.z);
       const currentY = this.playerMesh.rotation.y;
-      const lerpSpeed = 0.2;
-      this.playerMesh.rotation.y = currentY + (targetRotationY - currentY) * lerpSpeed;
+      this.playerMesh.rotation.y = currentY + (targetRotationY - currentY) * 0.2;
 
       this.playAnimation("Run");
     } else if (!hasMovement && !this.isJumping) {
       this.playAnimation("Idle");
     }
 
-    // Gestion du saut (espace)
     if (this.inputMap[" "] && !this.isJumping) {
       this.isJumping = true;
       this.jumpVelocity = 0.2;
       this.playAnimation("Jump", false);
 
-      // 🔊 Joue le son de saut si le son est chargé
       if (this.jumpSound && this.jumpSound.isReady) {
         this.jumpSound.play();
       }
     }
 
-    // Appliquer saut et gravité
     if (this.isJumping) {
       this.playerMesh.moveWithCollisions(new Vector3(0, this.jumpVelocity, 0));
       this.jumpVelocity -= this.gravity;
@@ -97,14 +92,14 @@ class PlayerController {
         this.playerMesh.position.y = this.minY;
         this.isJumping = false;
 
-        // Revenir à l'animation Idle ou Run
-        if (hasMovement) {
-          this.playAnimation("Run");
-        } else {
-          this.playAnimation("Idle");
-        }
+        this.playAnimation(hasMovement ? "Run" : "Idle");
       }
     }
+  }
+
+  setLimits(cityMesh) {
+    this.cityMesh = cityMesh;
+    // Tu peux ajouter des limites de mouvement ici si nécessaire
   }
 }
 

@@ -1,11 +1,16 @@
-import { FollowCamera, HemisphericLight, Vector3, Sound } from "@babylonjs/core";
-import BaseScene from "../BaseScene";
+import {
+  ArcRotateCamera,
+  HemisphericLight,
+  Vector3,
+  Sound
+} from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
+
+import BaseScene from "../BaseScene";
 import ImportMesh from "../models/ImportMesh";
 import Player from "../models/Player";
 import PlayerController from "../controllers/PlayerController";
 
-// URLs des assets
 import playerMeshUrl from "../../assets/meshs/Player.glb";
 import cityMeshUrl from "../../assets/meshs/cityBuildings.glb";
 import jumpSoundUrl from "../../assets/sounds/jump2.wav";
@@ -14,60 +19,101 @@ class CityScene extends BaseScene {
   constructor(engine, canvas) {
     super(engine, canvas);
     this.jumpSound = null;
+    this.cityMeshRef = null;
+    this.playerController = null;
   }
 
   initScene() {
-    this.createSceneCity();
+    this.createCityScene();
     this.loadJumpSound();
-    this.importMeshPlayer();
-    this.importMeshScene();
-    Inspector.Show(this._scene, {}); // Debug
-     // Attends 2 secondes le temps que les meshes soient chargés
+    this.importCityMesh();
+    this.importPlayerMesh();
+    Inspector.Show(this._scene, {});
     return this._scene;
   }
 
-  createSceneCity() {
-    // Caméra suiveuse
-    this.camera = new FollowCamera("cameraCity", new Vector3(0, 10, -10), this._scene);
-    this.camera.radius = 10;
-    this.camera.heightOffset = 5;
-    this.camera.rotationOffset = 180;
-    this.camera.cameraAcceleration = 0.05;
-    this.camera.maxCameraSpeed = 20;
-    this.camera.attachControl(this._canvas, true);
+  createCityScene() {
+    // Caméra qui suit le joueur
+    this.cameraPlayer = new ArcRotateCamera(
+      "cameraPlayer",
+      Math.PI / 2,
+      Math.PI / 3,
+      8,
+      new Vector3(0, 1, 0),
+      this._scene
+    );
+    this.cameraPlayer.attachControl(this._canvas, true);
+    this.cameraPlayer.lowerBetaLimit = 0.1;
+    this.cameraPlayer.upperBetaLimit = Math.PI - 0.1;
+    this.cameraPlayer.wheelPrecision = 50;
 
-    // Caméra active
-    this._scene.activeCamera = this.camera;
+    // Caméra fixe
+    this.cameraWorld = new ArcRotateCamera(
+      "cameraWorld",
+      Math.PI / 2,
+      Math.PI / 3.5,
+      40,
+      new Vector3(0, 5, 0),
+      this._scene
+    );
+
+    this._scene.activeCamera = this.cameraPlayer;
 
     // Lumière
-    const light = new HemisphericLight("lightCity", new Vector3(0, 1, 0), this._scene);
-    light.intensity = 0.7;
+    new HemisphericLight("lightCity", new Vector3(0, 1, 0), this._scene);
+
+    // Touche pour changer de caméra
+    window.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "c") {
+        this.switchCamera();
+      }
+    });
+  }
+
+  switchCamera() {
+    if (this._scene.activeCamera === this.cameraPlayer) {
+      this.cameraPlayer.detachControl(this._canvas);
+      this._scene.activeCamera = this.cameraWorld;
+      this.cameraWorld.attachControl(this._canvas, true);
+      if (this.playerController) this.playerController.active = false;
+    } else {
+      this.cameraWorld.detachControl(this._canvas);
+      this._scene.activeCamera = this.cameraPlayer;
+      this.cameraPlayer.attachControl(this._canvas, true);
+      if (this.playerController) this.playerController.active = true;
+    }
   }
 
   loadJumpSound() {
-    // Chargement du son de saut
     this.jumpSound = new Sound("jumpSound", jumpSoundUrl, this._scene, null, {
       volume: 5,
     });
   }
 
-  importMeshPlayer() {
-    this.player = new Player(this._scene, playerMeshUrl);
-    this.player.load((mesh, animations) => {
-      // Création du contrôleur du joueur avec le son de saut
-      this.playerController = new PlayerController(this._scene, mesh, animations, 0.1, this.jumpSound);
-
-      // Caméra suit le joueur
-      this.camera.lockedTarget = mesh;
-
-      // Position de départ du joueur
-      mesh.position = new Vector3(0, 0.5, 0);
+  importCityMesh() {
+    const city = new ImportMesh(this._scene, cityMeshUrl, new Vector3(0, 0, 0), "City");
+    city.load((mesh) => {
+      this.cityMeshRef = mesh;
+      if (this.playerController) {
+        this.playerController.setLimits(mesh);
+      }
     });
   }
 
-  importMeshScene() {
-    const cityMesh = new ImportMesh(this._scene, cityMeshUrl, new Vector3(0, 0, 0), "CityBuildings");
-    cityMesh.load();
+  importPlayerMesh() {
+    this.player = new Player(this._scene, playerMeshUrl);
+    this.player.load((mesh, animations) => {
+      this.playerController = new PlayerController(this._scene, mesh, animations, 0.1, this.jumpSound);
+      this.playerController.active = true;
+
+      mesh.position = new Vector3(0, 0.5, 0);
+
+      if (this.cityMeshRef) {
+        this.playerController.setLimits(this.cityMeshRef);
+      }
+
+      this.cameraPlayer.target = mesh;
+    });
   }
 }
 
