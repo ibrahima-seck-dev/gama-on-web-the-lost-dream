@@ -9,3 +9,4 @@ declare module "*.stl";
 
 // Physics
 declare module "ammo.js";
+declare module "*.wav"
