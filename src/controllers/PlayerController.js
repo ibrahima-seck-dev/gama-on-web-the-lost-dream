@@ -1,46 +1,66 @@
-import { ActionManager, Vector3, KeyboardEventTypes } from "@babylonjs/core";
+import { Vector3, KeyboardEventTypes } from "@babylonjs/core";
+import { ActionManager } from "@babylonjs/core";
 
 class PlayerController {
-  constructor(scene, playerMesh, animations = {}, speed = 0.1, jumpSound = null) {
+  constructor(scene, playerMesh, animations = {}, speed = 0.1, jumpSound = null, boundaries = null) {
     this.scene = scene;
     this.playerMesh = playerMesh;
-    this.animations = animations; // Doit contenir : Jump, Idle, Run
+    this.animations = animations;
     this.speed = speed;
-    this.jumpSound = jumpSound; // 🔥 Ajout du son de saut
+    this.jumpSound = jumpSound;
     this.inputMap = {};
     this.currentAnim = "";
     this.isJumping = false;
     this.jumpVelocity = 0;
     this.gravity = 0.01;
     this.minY = 0.5;
+    this.active = true;
+    this.boundaries = boundaries;
 
     this.initControls();
+    this.lockCameraWithinBounds();
   }
 
   initControls() {
     this.scene.actionManager = new ActionManager(this.scene);
-
     this.scene.onKeyboardObservable.add((kbInfo) => {
       const key = kbInfo.event.key.toLowerCase();
-      if (kbInfo.type === KeyboardEventTypes.KEYDOWN) {
-        this.inputMap[key] = true;
-      } else if (kbInfo.type === KeyboardEventTypes.KEYUP) {
-        this.inputMap[key] = false;
-      }
+      this.inputMap[key] = kbInfo.type === KeyboardEventTypes.KEYDOWN;
     });
-
     this.scene.onBeforeRenderObservable.add(() => {
-      this.updateMovement();
+      if (this.active) this.updateMovement();
     });
+  }
+
+  lockCameraWithinBounds() {
+    this.scene.onBeforeRenderObservable.add(() => {
+      if (!this.boundaries || !this.scene.activeCamera) return;
+      const cam = this.scene.activeCamera;
+      const lim = this.boundaries;
+      const margin = 1;
+      cam.position.x = Math.max(lim.minX + margin, Math.min(lim.maxX - margin, cam.position.x));
+      cam.position.z = Math.max(lim.minZ + margin, Math.min(lim.maxZ - margin, cam.position.z));
+    });
+  }
+
+  setLimits(boundaries) {
+    this.boundaries = boundaries;
+  }
+
+  clampPosition(pos) {
+    if (!this.boundaries) return pos;
+    return new Vector3(
+      Math.max(this.boundaries.minX, Math.min(this.boundaries.maxX, pos.x)),
+      pos.y,
+      Math.max(this.boundaries.minZ, Math.min(this.boundaries.maxZ, pos.z))
+    );
   }
 
   playAnimation(name, loop = true) {
     if (this.currentAnim === name) return;
-
     if (this.animations[this.currentAnim]?.isStarted) {
       this.animations[this.currentAnim].stop();
     }
-
     if (this.animations[name]) {
       this.animations[name].start(loop);
       this.currentAnim = name;
@@ -49,62 +69,47 @@ class PlayerController {
 
   updateMovement() {
     if (!this.playerMesh) return;
+    const dir = new Vector3(
+      (this.inputMap['d'] || this.inputMap['arrowright']) ? 1 : (this.inputMap['q'] || this.inputMap['arrowleft']) ? -1 : 0,
+      0,
+      (this.inputMap['s'] || this.inputMap['arrowdown']) ? 1 : (this.inputMap['z'] || this.inputMap['arrowup']) ? -1 : 0
+    );
+    const moving = dir.lengthSquared() > 0;
 
-    const direction = new Vector3(0, 0, 0);
+    if (moving && !this.isJumping) {
+      dir.normalize();
+      const move = dir.scale(this.speed);
+      let nextPos = this.playerMesh.position.add(move);
+      nextPos = this.clampPosition(nextPos);
+      this.playerMesh.moveWithCollisions(nextPos.subtract(this.playerMesh.position));
 
-    // Déplacement clavier
-    if (this.inputMap["arrowup"] || this.inputMap["z"]) direction.z -= 1;
-    if (this.inputMap["arrowdown"] || this.inputMap["s"]) direction.z += 1;
-    if (this.inputMap["arrowleft"] || this.inputMap["q"]) direction.x -= 1;
-    if (this.inputMap["arrowright"] || this.inputMap["d"]) direction.x += 1;
+      // Faire tourner le joueur dans la direction du déplacement
+      const desiredAngle = Math.atan2(dir.x, dir.z);
+      this.playerMesh.rotation.y = desiredAngle;
 
-    const hasMovement = direction.lengthSquared() > 0;
-
-    // Gestion du mouvement
-    if (hasMovement && !this.isJumping) {
-      direction.normalize();
-      this.playerMesh.moveWithCollisions(direction.scale(this.speed));
-
-      // Rotation fluide vers la direction
-      const targetRotationY = Math.atan2(direction.x, direction.z);
-      const currentY = this.playerMesh.rotation.y;
-      const lerpSpeed = 0.2;
-      this.playerMesh.rotation.y = currentY + (targetRotationY - currentY) * lerpSpeed;
-
-      this.playAnimation("Run");
-    } else if (!hasMovement && !this.isJumping) {
-      this.playAnimation("Idle");
+      this.playAnimation('Run');
+    } else if (!moving && !this.isJumping) {
+      this.playAnimation('Idle');
     }
 
-    // Gestion du saut (espace)
-    if (this.inputMap[" "] && !this.isJumping) {
+    if (this.inputMap[' '] && !this.isJumping) {
       this.isJumping = true;
       this.jumpVelocity = 0.2;
-      this.playAnimation("Jump", false);
-
-      // 🔊 Joue le son de saut si le son est chargé
-      if (this.jumpSound && this.jumpSound.isReady) {
-        this.jumpSound.play();
-      }
+      this.playAnimation('Jump', false);
+      if (this.jumpSound?.isReady()) this.jumpSound.play();
     }
 
-    // Appliquer saut et gravité
     if (this.isJumping) {
       this.playerMesh.moveWithCollisions(new Vector3(0, this.jumpVelocity, 0));
       this.jumpVelocity -= this.gravity;
-
       if (this.playerMesh.position.y <= this.minY) {
         this.playerMesh.position.y = this.minY;
         this.isJumping = false;
-
-        // Revenir à l'animation Idle ou Run
-        if (hasMovement) {
-          this.playAnimation("Run");
-        } else {
-          this.playAnimation("Idle");
-        }
+        this.playAnimation(moving ? 'Run' : 'Idle');
       }
     }
+
+    this.playerMesh.position.copyFrom(this.clampPosition(this.playerMesh.position));
   }
 }
 
