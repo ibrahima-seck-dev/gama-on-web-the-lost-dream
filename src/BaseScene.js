@@ -1,6 +1,6 @@
 import { Scene } from "@babylonjs/core";
 import Player from "./models/Player";
-import playerMeshUrl from "../assets/meshs/Player.glb";
+
 
 class BaseScene {
   constructor(engine, canvas) {

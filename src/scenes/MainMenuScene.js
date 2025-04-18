@@ -16,7 +16,8 @@ import {
 } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 import BaseScene from "../BaseScene";
-import backgroudUrl from "../../assets/texture/background.png"
+const backgroudUrl = "../assets/textures/background.jpg"; // URL de l'image de fond
+
 
 class MainMenuScene extends BaseScene {
   constructor(engine, canvas) {

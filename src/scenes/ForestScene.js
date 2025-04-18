@@ -2,7 +2,6 @@ import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@baby
 import BaseScene from "../BaseScene";
 import { Inspector } from "@babylonjs/inspector";
 import Player from "../models/Player";
-import meshUrl from "../../assets/meshs/Player.glb";
 
 class ForestScene extends BaseScene {
   constructor(engine, canvas) {

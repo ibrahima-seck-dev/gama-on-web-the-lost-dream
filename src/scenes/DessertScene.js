@@ -1,38 +1,47 @@
-import { Scene, FreeCamera, HemisphericLight, MeshBuilder, Vector3 } from "@babylonjs/core";
+import { 
+  Scene, 
+  FreeCamera, 
+  HemisphericLight, 
+  MeshBuilder, 
+  Vector3 
+} from "@babylonjs/core";
+import { Inspector } from "@babylonjs/inspector";
+
 import BaseScene from "../BaseScene";
-import { Inspector } from '@babylonjs/inspector';
 import Player from "../models/Player";
-import meshUrl from "../../assets/meshs/Player.glb";
+import Constants from "../utils/Constants";  // Pour les chemins de mesh
 
 class DessertScene extends BaseScene {
   constructor(engine, canvas) {
     super(engine, canvas);
+    this.player = null;
   }
 
-  initScene() {
-  this.importMeshPlayer()
+  async initScene() {
+    await this.importMeshPlayer();
+
     const camera = new FreeCamera("cameraDessert", new Vector3(0, 5, -10), this._scene);
     camera.setTarget(Vector3.Zero());
     camera.attachControl(this._canvas, true);
 
-    // Configuration de la lumière
     const light = new HemisphericLight("lightDessert", new Vector3(0, 1, 0), this._scene);
     light.intensity = 0.7;
 
-    // Création du sol
     const ground = MeshBuilder.CreateGround("groundDessert", { width: 10, height: 10 }, this._scene);
 
-    // Affichage de l'inspecteur pour debug
     Inspector.Show(this._scene, {});
 
-    // Ajout des éléments spécifiques au désert
-    
-
-    return this._scene;  // Retourne la scène
+    return this._scene;
   }
-  importMeshPlayer() {
-    this.player = new Player(this._scene, meshUrl);  // Utilisation du meshUrl
-    this.player.load();  // Charge et positionne le joueur
+
+  async importMeshPlayer() {
+    this.player = new Player(this._scene, Constants.PLAYER_MESH_URL);
+    const { mesh } = await this.player.load();
+
+    mesh.position = new Vector3(0, 1.2, 0); // Positionnement
+    mesh.checkCollisions = true;
+    mesh.ellipsoid = new Vector3(0.5, 1, 0.5);
+    mesh.ellipsoidOffset = new Vector3(0, 1, 0);
   }
 }
 

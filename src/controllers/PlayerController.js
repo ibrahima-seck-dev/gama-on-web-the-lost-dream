@@ -69,11 +69,13 @@ class PlayerController {
 
   updateMovement() {
     if (!this.playerMesh) return;
+
     const dir = new Vector3(
       (this.inputMap['d'] || this.inputMap['arrowright']) ? 1 : (this.inputMap['q'] || this.inputMap['arrowleft']) ? -1 : 0,
       0,
       (this.inputMap['s'] || this.inputMap['arrowdown']) ? 1 : (this.inputMap['z'] || this.inputMap['arrowup']) ? -1 : 0
     );
+
     const moving = dir.lengthSquared() > 0;
 
     if (moving && !this.isJumping) {
@@ -83,9 +85,12 @@ class PlayerController {
       nextPos = this.clampPosition(nextPos);
       this.playerMesh.moveWithCollisions(nextPos.subtract(this.playerMesh.position));
 
-      // Faire tourner le joueur dans la direction du déplacement
+      // Rotation fluide vers la direction de déplacement
       const desiredAngle = Math.atan2(dir.x, dir.z);
-      this.playerMesh.rotation.y = desiredAngle;
+      const currentY = this.playerMesh.rotation.y;
+      const deltaAngle = desiredAngle - currentY;
+      const wrappedDelta = Math.atan2(Math.sin(deltaAngle), Math.cos(deltaAngle));
+      this.playerMesh.rotation.y += wrappedDelta * 0.2;
 
       this.playAnimation('Run');
     } else if (!moving && !this.isJumping) {

@@ -4,78 +4,67 @@ import ForestScene from "./scenes/ForestScene";
 import DessertScene from "./scenes/DessertScene";
 import CityScene from "./scenes/CityScene";
 
-class Index {
+class Game {
   constructor() {
     this.canvas = document.getElementById("renderCanvas");
     this.engine = new Engine(this.canvas, true);
     this.currentScene = null;
     this.currentSceneName = "";
     this.scenes = {};
+    this.loader = document.getElementById("loader");
   }
 
-  // Initialisation du jeu
-  initGame() {
-    // Créer les scènes dès le début
-    const mainMenuScene = new MainMenuScene(this.engine, this.canvas);
-    const forestScene = new ForestScene(this.engine, this.canvas);
-    const dessertScene = new DessertScene(this.engine, this.canvas);
-    const cityScene = new CityScene(this.engine, this.canvas);
-
-    // Stocker les scènes dans un objet
+  async initGame() {
     this.scenes = {
-      "mainMenu": mainMenuScene,
-      "forest": forestScene,
-      "dessert": dessertScene,
-      "city": cityScene
+      mainMenu: new MainMenuScene(this.engine, this.canvas),
+      forest: new ForestScene(this.engine, this.canvas),
+      dessert: new DessertScene(this.engine, this.canvas),
+      city: new CityScene(this.engine, this.canvas)
     };
 
-    // Initialiser la scène principale (Menu)
-    this.switchScene("mainMenu");
+    await this.switchScene("mainMenu");
   }
 
-  // Méthode pour changer de scène de manière synchrone
-  switchScene(sceneName) {
-    if (this.scenes[sceneName]) {
-      console.log(`Switching to scene: ${sceneName}`);
-  
-   
-  
-      this.currentScene = this.scenes[sceneName];
-      this.currentScene.initScene();  // Appel de la méthode synchrone pour initialiser la scène
-      this.currentSceneName = sceneName;
-    } else {
-      console.error(`Scene ${sceneName} does not exist!`);
+  async switchScene(sceneName) {
+    if (!this.scenes[sceneName]) {
+      console.error(`Scene ${sceneName} does not exist`);
+      return;
     }
+
+    this.showLoader();
+
+    this.currentScene = this.scenes[sceneName];
+    const scene = await this.currentScene.initScene(); // Assure-toi que initScene() est async
+    this.currentSceneName = sceneName;
+
+    this.hideLoader();
   }
 
-  // Méthode pour démarrer le moteur de jeu
-  start() {
-    window.onload = () => {
-      console.log('Game Starting...');
-      
-      // Initialiser le jeu (scènes)
-      this.initGame();
+  showLoader() {
+    if (this.loader) this.loader.style.display = "flex";
+  }
 
-      // Démarrer la boucle de rendu
+  hideLoader() {
+    if (this.loader) this.loader.style.display = "none";
+  }
+
+  start() {
+    window.addEventListener("DOMContentLoaded", async () => {
+      await this.initGame();
+
       this.engine.runRenderLoop(() => {
         if (this.currentScene && this.currentScene.scene) {
           this.currentScene.scene.render();
         }
       });
 
-      // Adapter la taille du moteur à la taille du canvas
       window.addEventListener("resize", () => {
         this.engine.resize();
       });
-    };
+    });
   }
 }
 
-// Créer une instance du jeu et l'attacher à window pour un accès global
-const game = new Index();
-window.game = game;  // ⚠️ Important pour l'accès global
-
-// Démarrer le jeu
+const game = new Game();
+window.game = game;
 game.start();
-
-export { Index };

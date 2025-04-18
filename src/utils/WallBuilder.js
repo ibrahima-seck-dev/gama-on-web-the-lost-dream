@@ -1,4 +1,3 @@
-// utils/WallBuilder.js
 import { MeshBuilder, StandardMaterial, Color3 } from "@babylonjs/core";
 
 class WallBuilder {
@@ -8,14 +7,17 @@ class WallBuilder {
     const thickness = options.thickness || 1;
 
     const mat = new StandardMaterial("wallMat", scene);
-    mat.diffuseColor = new Color3(0.8, 0.8, 0.8);
-    mat.alpha = 1;
+    mat.diffuseColor = options.color || new Color3(0.8, 0.8, 0.8);
+    mat.alpha = options.materialAlpha ?? 1;
+
+    const walls = [];
 
     const makeWall = (width, height, depth, x, y, z) => {
       const wall = MeshBuilder.CreateBox("wall", { width, height, depth }, scene);
       wall.position.set(x, y, z);
       wall.checkCollisions = true;
       wall.material = mat;
+      walls.push(wall);
     };
 
     // Bas
@@ -26,6 +28,8 @@ class WallBuilder {
     makeWall(thickness, wallHeight, maxZ - minZ, minX, wallHeight / 2, (minZ + maxZ) / 2);
     // Droite
     makeWall(thickness, wallHeight, maxZ - minZ, maxX, wallHeight / 2, (minZ + maxZ) / 2);
+
+    return walls;
   }
 }
 
