@@ -6,8 +6,12 @@ import {
   MeshBuilder,
   StandardMaterial,
   Color3,
-  Ray
+  Ray,
+  FreeCamera,
+  Camera,
+  RenderTargetTexture
 } from "@babylonjs/core";
+
 import { SkyMaterial } from "@babylonjs/materials";
 import { Inspector } from "@babylonjs/inspector";
 
@@ -18,20 +22,24 @@ import WallBuilder from "../utils/WallBuilder";
 import Constants from "../utils/Constants";
 import Player from "../models/Player";
 import PlayerController from "../controllers/PlayerController";
+import MiniMap from "../utils/MiniMap"; // ⬅️ nouveau import
 
 class CityScene extends BaseScene {
   constructor(engine, canvas) {
     super(engine, canvas);
     this.jumpSound = null;
+    this.ambientCitySound = null;
     this.groundLimits = null;
     this.cityMeshes = [];
     this.player = null;
+    this.playerController = null;
     this.walls = [];
   }
 
   async initScene() {
     this.createSceneCity();
     this.loadJumpSound();
+    this.loadCityAmbientSound();
     this.createGround();
 
     const [cityMesh, playerData] = await Promise.all([
@@ -44,6 +52,9 @@ class CityScene extends BaseScene {
     cityMesh.setEnabled(true);
     playerData.mesh.setEnabled(true);
     this.walls.forEach(w => w.setEnabled(true));
+
+    // Utilisation de la mini-map modulaire
+    new MiniMap(this._scene, this.camera);
 
     Inspector.Show(this._scene, {});
 
@@ -62,7 +73,6 @@ class CityScene extends BaseScene {
       const hits = this._scene.multiPickWithRay(ray, m => this.cityMeshes.includes(m));
       hits?.forEach(p => p.pickedMesh && (p.pickedMesh.visibility = 0.2));
     });
-   
 
     return this._scene;
   }
@@ -97,7 +107,17 @@ class CityScene extends BaseScene {
   }
 
   loadJumpSound() {
-    this.jumpSound = new Sound("jumpSound", Constants.JUMP_SOUND_URL, this._scene, null, { volume: 5 });
+    this.jumpSound = new Sound("jumpSound", Constants.JUMP_SOUND_URL, this._scene, null, {
+      volume: 5
+    });
+  }
+
+  loadCityAmbientSound() {
+    this.ambientCitySound = new Sound("cityAmbient", Constants.CITY_SOUND_URL, this._scene, null, {
+      loop: true,
+      autoplay: true,
+      volume: 0.6
+    });
   }
 
   createGround() {
@@ -120,7 +140,7 @@ class CityScene extends BaseScene {
   }
 
   async importCityMesh() {
-    const result = await AssetLoader.loadMesh(this._scene, Constants.CITY_MESH_URL); // Chemin relatif type 'assets/meshs/City.glb'
+    const result = await AssetLoader.loadMesh(this._scene, Constants.CITY_MESH_URL);
     const rootMesh = result.meshes[0];
     rootMesh.name = "CityBuildings";
     rootMesh.position.y = 0;
@@ -132,14 +152,16 @@ class CityScene extends BaseScene {
   }
 
   async importPlayer() {
-    this.player = new Player(this._scene, Constants.PLAYER_MESH_URL); // Chemin relatif type 'assets/meshs/Player.glb'
+    this.player = new Player(this._scene, Constants.PLAYER_MESH_URL);
     const { mesh, animations } = await this.player.load();
 
     mesh.setEnabled(false);
     mesh.checkCollisions = true;
     mesh.ellipsoid = new Vector3(0.5, 1, 0.5);
     mesh.ellipsoidOffset = new Vector3(0, 1, 0);
-    mesh.position = new Vector3(0, 1.2, 0);
+
+    const groundY = this.groundLimits?.minY ?? 0;
+    mesh.position = new Vector3(0, groundY + 1.5, 0);
 
     this.playerController = new PlayerController(
       this._scene,
@@ -152,6 +174,22 @@ class CityScene extends BaseScene {
 
     this.camera.lockedTarget = mesh;
     return { mesh, animations };
+  }
+
+  setLimits(boundaries) {
+    this.playerController.setLimits(boundaries);
+  }
+
+  clampPosition(pos) {
+    return this.playerController.clampPosition(pos);
+  }
+
+  playAnimation(name, loop = true) {
+    this.playerController.playAnimation(name, loop);
+  }
+
+  setPlayerActive(active) {
+    this.playerController.active = active;
   }
 }
 
