@@ -118,4 +118,4 @@ class PlayerController {
   }
 }
 
-export default PlayerController;
+export default PlayerController

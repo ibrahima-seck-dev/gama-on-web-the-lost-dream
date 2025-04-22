@@ -3,16 +3,10 @@ import {
   HemisphericLight,
   Vector3,
   Sound,
-  MeshBuilder,
-  StandardMaterial,
-  Color3,
   Ray,
-  FreeCamera,
-  Camera,
-  RenderTargetTexture
+  Color3
 } from "@babylonjs/core";
 
-import { SkyMaterial } from "@babylonjs/materials";
 import { Inspector } from "@babylonjs/inspector";
 
 import BaseScene from "../BaseScene";
@@ -20,9 +14,11 @@ import AssetLoader from "../utils/AssetLoader";
 import SceneUtils from "../utils/SceneUtils";
 import WallBuilder from "../utils/WallBuilder";
 import Constants from "../utils/Constants";
-import Player from "../models/Player";
-import PlayerController from "../controllers/PlayerController";
-import MiniMap from "../utils/MiniMap"; // ⬅️ nouveau import
+import PlayerFactory from "../utils/PlayerFactory";
+import CameraUtils from "../utils/CameraUtils";
+import MiniMap from "../utils/MiniMap";
+import FindKeyMission from "../missions/FindKeyMission";
+import IntroCinematic from "../utils/IntroCinematic";
 
 class CityScene extends BaseScene {
   constructor(engine, canvas) {
@@ -37,7 +33,10 @@ class CityScene extends BaseScene {
   }
 
   async initScene() {
-    this.createSceneCity();
+    this._scene.collisionsEnabled = true;
+    CameraUtils.setupLightAndSky(this._scene);
+    this.camera = CameraUtils.createFollowCamera(this._scene, this._canvas, null);
+
     this.loadJumpSound();
     this.loadCityAmbientSound();
     this.createGround();
@@ -53,8 +52,29 @@ class CityScene extends BaseScene {
     playerData.mesh.setEnabled(true);
     this.walls.forEach(w => w.setEnabled(true));
 
-    // Utilisation de la mini-map modulaire
     new MiniMap(this._scene, this.camera);
+
+    await IntroCinematic.play(
+      this._scene,
+      this.camera,
+      playerData.mesh,
+      "Mission : Trouve la clé pour ouvrir la porte"
+    );
+
+    const mission = new FindKeyMission(
+      this._scene,
+      playerData.mesh,
+      playerData.animations.skeleton ?? null,
+      (result) => {
+        if (result === "retry") {
+          window.game.switchScene("city"); // Relance propre de la scène
+        } else {
+          window.game.switchScene("success"); // Passage à la scène de succès
+        }
+      }
+    );
+
+    await mission.start();
 
     Inspector.Show(this._scene, {});
 
@@ -75,35 +95,6 @@ class CityScene extends BaseScene {
     });
 
     return this._scene;
-  }
-
-  createSceneCity() {
-    this._scene.collisionsEnabled = true;
-
-    this.camera = new FollowCamera("cameraCity", new Vector3(0, 10, 15), this._scene);
-    this.camera.heightOffset = 5;
-    this.camera.rotationOffset = 0;
-    this.camera.cameraAcceleration = 0.05;
-    this.camera.maxCameraSpeed = 20;
-    this.camera.radius = 10;
-    this.camera.lowerRadiusLimit = 10;
-    this.camera.upperRadiusLimit = 10;
-    this.camera.inputs.removeByType("FreeCameraMouseWheelInput");
-    this.camera.checkCollisions = true;
-    this.camera.collisionRadius = new Vector3(1, 1, 1);
-    this.camera.applyGravity = false;
-
-    this.camera.attachControl(this._canvas, true);
-    this._scene.activeCamera = this.camera;
-
-    new HemisphericLight("lightCity", new Vector3(0, 1, 0), this._scene);
-    this._scene.clearColor = new Color3(0.7, 0.85, 1);
-
-    const skybox = MeshBuilder.CreateBox("skyBox", { size: 1000 }, this._scene);
-    const skyMat = new SkyMaterial("skyMaterial", this._scene);
-    skyMat.backFaceCulling = false;
-    skyMat.inclination = 0;
-    skybox.material = skyMat;
   }
 
   loadJumpSound() {
@@ -147,31 +138,19 @@ class CityScene extends BaseScene {
     rootMesh.setEnabled(false);
 
     SceneUtils.enableCollisionsRecursively(rootMesh);
-    this.cityMeshes.push(rootMesh);
+    this.cityMeshes = rootMesh.getChildMeshes(false);
     return rootMesh;
   }
 
   async importPlayer() {
-    this.player = new Player(this._scene, Constants.PLAYER_MESH_URL);
-    const { mesh, animations } = await this.player.load();
-
-    mesh.setEnabled(false);
-    mesh.checkCollisions = true;
-    mesh.ellipsoid = new Vector3(0.5, 1, 0.5);
-    mesh.ellipsoidOffset = new Vector3(0, 1, 0);
-
-    const groundY = this.groundLimits?.minY ?? 0;
-    mesh.position = new Vector3(0, groundY + 1.5, 0);
-
-    this.playerController = new PlayerController(
+    const { mesh, animations, controller } = await PlayerFactory.create(
       this._scene,
-      mesh,
-      animations,
-      0.1,
+      Constants.PLAYER_MESH_URL,
       this.jumpSound,
       this.groundLimits
     );
 
+    this.playerController = controller;
     this.camera.lockedTarget = mesh;
     return { mesh, animations };
   }
@@ -193,4 +172,4 @@ class CityScene extends BaseScene {
   }
 }
 
-export default CityScene;
+export default CityScene

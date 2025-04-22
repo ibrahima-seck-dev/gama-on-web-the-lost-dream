@@ -16,7 +16,7 @@ import {
 } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 import BaseScene from "../BaseScene";
-const backgroudUrl = "../assets/textures/background.jpg"; // URL de l'image de fond
+const backgroundUrl = "/assets/textures/background.jpg"; // URL de l'image de fond
 
 
 class MainMenuScene extends BaseScene {
@@ -70,7 +70,7 @@ class MainMenuScene extends BaseScene {
     backgroundPlane.rotation = new Vector3(Math.PI / 2, 0, 0); // Rotation pour le rendre visible par la caméra
 
     const backgroundMaterial = new StandardMaterial("bgMat", this._scene);
-    backgroundMaterial.diffuseTexture = new Texture(backgroudUrl, this._scene); 
+    backgroundMaterial.diffuseTexture = new Texture(backgroundUrl, this._scene); 
     backgroundMaterial.emissiveTexture = backgroundMaterial.diffuseTexture;
     backgroundMaterial.disableLighting = true;
     backgroundMaterial.backFaceCulling = false; // Désactiver le culling de la face arrière
